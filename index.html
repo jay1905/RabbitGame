@@ -1,0 +1,129 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<script type="text/javascript" src="matter.js"></script>
+	<style media="screen">
+		body{
+			background: #202028;
+			color:#fff;
+			font-family:sans-serif;
+			font-size: 2em;
+			text-align: center;
+		}
+		canvas{
+			border:solid .2em #fff;
+			height: 90vh;
+		}
+	</style>
+</head>
+<body>
+
+	<script type="text/javascript">
+var Engine = Matter.Engine,
+    Render = Matter.Render,
+    World = Matter.World,
+    Bodies = Matter.Bodies,
+		Body = Matter.Body
+var engine = Engine.create();
+var render = Render.create({
+    element: document.body,
+    engine: engine,
+		options:{
+				width:800,
+				height:630,
+				wireframes: false,
+			}
+});
+let context = render.context;
+context.font = "30px Arial";
+class rabbit{
+	constructor(x,y){
+		this.b = Bodies.circle(250,550,15)
+		this.b.label='rabbit'
+		Body.setMass(this.b,0.1)
+		World.add(engine.world, this.b);
+		this.score =0
+	
+	}
+	move(x){
+		Body.setPosition( this.b, {x:x, y:this.b.position.y});
+	}
+	jump(y){
+		Body.setVelocity(this.b,{x:0, y:y})
+	}
+	update(){
+		//this.jump()
+		if(-this.score >this.b.position.y){
+			this.score = Math.floor(-this.b.position.y)
+		}
+	}
+}
+class platform{
+	constructor(x,y){
+		this.b = Bodies.rectangle(x,y,100,20,{frictionAir:0.7})
+		this.b.label='platform'
+		World.add(engine.world,this.b)
+	}
+}
+var ground = Bodies.rectangle(400, 610, 1810, 100, { isStatic: true });
+ground.label='ground'
+World.add(engine.world, [ground])
+let r = new rabbit()
+let platforms=[]
+let lastPlatformY=-400
+let start=false
+platforms.push(new platform(100,600))
+platforms.push(new platform(300,100))
+function addPlatform(y){
+	platforms.push(new platform(Math.floor(Math.random()*800),y))
+	lastPlatformY=y-500
+	deletePlatform()
+}
+function deletePlatform(){
+	World.remove(engine.world,platforms[0].b)
+	  platforms.splice(0,1)
+		start=true
+}
+
+Engine.run(engine);
+Render.run(render);
+document.addEventListener('mousemove', (event) => {
+		r.move(event.layerX)
+});
+Matter.Events.on(engine, 'collisionStart', function(event) {
+		let pairs =event.pairs
+		pairs.forEach(pair =>{
+			if (pair.bodyA.label == 'rabbit' && pair.bodyB.label == 'platform') {
+						r.jump(-23.08)
+			}
+			if (pair.bodyA.label == 'rabbit' && pair.bodyB.label == 'ground') {
+				if (start) {
+				 setTimeout(function(){ window.location.reload(false);}, 2000)
+			 }
+			}
+			if (pair.bodyB.label == 'rabbit' && pair.bodyA.label == 'ground') {
+				if (start) {
+					setTimeout(function(){ window.location.reload(false);}, 2000)
+				}
+			}
+		})
+});
+  (function run(t) {
+		if (lastPlatformY>r.b.position.y-460) {
+			addPlatform(r.b.position.y-500)
+		}
+
+		r.update()
+		context.fillStyle = "white";
+		context.fillText(`Score: ${r.score}`, 50, 50)
+		Render.lookAt(render, {x:render.canvas.width/2,y:r.b.position.y-200}, {x: render.canvas.width/2,y: render.canvas.height/2});
+		Engine.update(engine, 1000 / 60);
+		window.requestAnimationFrame(run);
+	})()
+
+	</script>
+
+</body>
+
+</html>
